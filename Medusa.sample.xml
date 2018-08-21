@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  __  __          _ 
+ |  \/  | ___  __| |_   _ ___  __ _ 
+ | |\/| |/ _ \/ _` | | | / __|/ _` |
+ | |  | |  __/ (_| | |_| \__ \ (_| |
+ |_|  |_|\___|\__,_|\__,_|___/\__,_|
+
+ Medusa.xml - Medusa specifications
+ v7.7, May 2016 by Harley H. Puthuff
+ Copyright 2008-2016, Your Showcase on the Internet
+-->
+<medusa>
+	<nomenclature>
+		<name>Medusa</name>
+		<version>v7.7</version>
+		<author>Harley H. Puthuff</author>
+		<copyright>Copyright 2008-2016, Your Showcase</copyright>
+		<description>A low-level interface class library</description>
+	</nomenclature>
+    <databoss>
+		<connections>
+			<connection
+				name="localhost"
+				host="localhost"
+				user="{username}"
+				pass="{password}"
+				/>
+		</connections>
+		<defaultConnection>localhost</defaultConnection>
+	</databoss>
+</medusa>
