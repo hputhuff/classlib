@@ -6,56 +6,70 @@
 # |_|  |_|\___|\__,_|\__,_|___/\__,_|
 #
 # Medusa.pm - Medusa Class Library for Perl
-# August 2015 by Harley H. Puthuff
-# Copyright 2015, Your Showcase on the Internet
+# August 2018 by Harley H. Puthuff
+# Copyright 2015-18, Your Showcase on the Internet
 #
 
 use feature "switch";
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
 
 ##
-# Connector class - defines a connection for data
-#
-package Connector;				# internal use
-
-sub new {
-	my $class = shift;
-	my $this = {};
-	bless $this,$class;
-	$this->{name} = shift;		# connector tag/name
-	$this->{host} = shift;		# host where data is
-	$this->{user} = shift;		# username for login
-	$this->{pass} = shift;		# password for login
-	$this->{path} = shift;		# (optional) db name
-	$this->{handle} = undef;	# resource handle
-	return $this;
-	}
-
-##
 # Medusa class - base class for the Medusa library
 #
-
 package Medusa;
+use XML::Simple;
 
-#
-# table of connectors for data sources
-#
-my	$connectors = [
-	Connector->new("dbh"),	# special for passed handle from application
-	Connector->new("localhost","localhost","harley","developer"),
-	Connector->new("webasket","localhost","webasket","shoptillyoudrop")
-	];
+# class (& public) properties
 
+our $medusa;
+our $xmlFile;
+our $xml;
+
+# initialize class properties:
+
+BEGIN {
+	$medusa = {
+		"nomenclature" => {
+			"description"	=> "A low-level interface class library",
+			"author"			=> "Harley H. Puthuff",
+			"name"			=> "Medusa",
+			"version"		=> "v8.1",
+			"copyright"		=> "Copyright 2008-2018, Your Showcase"
+			},
+		"databoss" => {
+			"connections" => {
+				"connection" => {
+					"localhost" => {
+						"user" => "<username>",
+						"host" => "<hostname>",
+						"pass" => "<password>"
+						},
+					"dbh" => {
+						}
+					}
+				},
+			"defaultConnection" => "localhost"
+			}
+		};
+	$xmlFile = "Medusa.xml";
+	$xml = new XML::Simple;
+	$medusa = $xml->XMLin($xmlFile) if (-e $xmlFile);
+	}
+
+
+# retrieve the connector for a dbms connection
 #
-# retrieve the connector for a data connection
-#
-#	@param string $nametag			: nametag of the connector
-#	@return object					: a ref. to the connector hash
-#
+#	param:	 (optional) )name of the connector
+#	returns:	 a ref. to the connector hash
+
 sub getConnector {
-	my ($class,$nametag) = @_;
-	foreach (@{$connectors}) {return $_ if ($_->{name} eq $nametag);}
-	die "Cannot find a Connector for: $nametag !!";
+	my ($class,$name) = @_;
+	my $connector;
+	$name ||= $medusa->{databoss}{defaultConnection};
+	$connector = $medusa->{databoss}{connections}{connection}{$name};
+	die qq|! Cannot locate Medusa Connector: $name !| unless $connector;
+	$connector->{name} ||= $name; # save it's name
+	return $connector;
 	}
 
 ##
@@ -1500,4 +1514,4 @@ sub rtrim ($;$) {
     return $string;
 	}
 
--1;
+1;
