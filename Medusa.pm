@@ -19,6 +19,10 @@ no if $] >= 5.017011, warnings => 'experimental::smartmatch';
 package Medusa;
 use XML::Simple;
 
+# constants, default values:
+
+use constant MEDUSA_XML_FILE => "Medusa.xml";
+
 # class (& public) properties
 
 our $medusa;
@@ -51,7 +55,7 @@ BEGIN {
 			"defaultConnection" => "localhost"
 			}
 		};
-	$xmlFile = "Medusa.xml";
+	$xmlFile = MEDUSA_XML_FILE;
 	$xml = new XML::Simple;
 	$medusa = $xml->XMLin($xmlFile) if (-e $xmlFile);
 	}
@@ -68,7 +72,7 @@ sub getConnector {
 	$name ||= $medusa->{databoss}{defaultConnection};
 	$connector = $medusa->{databoss}{connections}{connection}{$name};
 	die qq|! Cannot locate Medusa Connector: $name !| unless $connector;
-	$connector->{name} ||= $name; # save it's name
+	$connector->{name} ||= $name; # save its name
 	return $connector;
 	}
 
@@ -79,15 +83,14 @@ sub getConnector {
 package Databoss;
 use DBI;
 
-my	$connector = undef;				# current connector
+my	$connector;	# current connector
 
-#
 # constructor - construct new Databoss / connection object
 #
-#	@param mixed $param				: (optional) a connector nametag or db handle
-#	@param string $database			: (optional) database name to start with
-#	returns object					: a new,connected Databoss object
-#
+#	param:	(optional) a connector nametag or db handle
+#	param:	(optional) database name to start with
+#	returns: a new,connected Databoss object
+
 sub	new {
     my ($class,$param,$database) = @_;
 	my ($this,$dsn,$results,$dbname);
@@ -96,67 +99,59 @@ sub	new {
 	if (! $param) {								# no connector passed
 		if ($connector)							# use the last connector
 			{$this->{connector} = $connector;}
-		else									# or just default to dev
-			{$this->{connector} = Medusa->getConnector("dev");}
+		else									# or just use the default
+			{$this->{connector} = Medusa->getConnector;}
 		}
 	elsif (ref $param) {						# passed a db handle (external)
 		$this->{connector} = Medusa->getConnector("dbh");
-		$this->{connector}->{handle} = $param;
+		$this->{connector}{handle} = $param;
 		}
 	else {										# passed a connector name
 		$this->{connector} = Medusa->getConnector(lc $param);
 		}
 	return $this unless $this->{connector};
-	$connector = $this->{connector};			# save current connector
-	if (! $this->{connector}->{handle}) {		# need to make connection
-		$dsn = "DBI:mysql:$this->{connector}->{path}:$this->{connector}->{host}:3306";
-		$this->{connector}->{handle} =
-			DBI->connect($dsn,$this->{connector}->{user},$this->{connector}->{pass},
-				{mysql_auto_reconnect=>1})
-			or die "! Cannot connect to DB $this->{connector}->{name} server: $DBI::errstr\n";
+	$this->{connector}{path} = $database;		# pre-select db
+	$connector = $this->{connector};			# save current as last
+	if (! $this->{connector}{handle}) {			# need to make connection
+		$dsn = "DBI:mysql:$this->{connector}{path}:$this->{connector}{host}:3306";
+		$this->{connector}{handle} =
+			DBI->connect($dsn,$this->{connector}{user},$this->{connector}{pass},{mysql_auto_reconnect=>1})
+			or die "! Cannot connect to DB $this->{connector}{name} server: $DBI::errstr\n";
 		}
-	$this->{connector}->{path} = $database if ($database);	# pre-select db
-	$this->loadDatabases() unless (defined $this->{connector}->{databases});
+	$this->loadDatabases unless (defined $this->{connector}{databases});
+	$this->selectDatabase($this->{connector}{path}) if ($this->{connector}{path});
 	return $this;
 	}
 
-#
 # escape a string prior to processing by DBI/mysql
 #
-#	@param string $string			: the string to be escaped
-#	@return string					: the escaped string
-#
+#	param:	the string to be escaped
+#	return: the escaped string
+
 sub quote {
 	my ($this,$string) = @_;
-	return $this->{connector}->{handle}->quote($string);
+	return $this->{connector}{handle}->quote($string);
 	}
 
-#
 # check the db connection & attempt to reconnect if down
 # otherwise just die a horrible death now...
-#
+
 sub reconnect {
 	my $this = shift;
-	if (! $this->{connector}->{handle}->ping) {
-		$dsn = "DBI:mysql:$this->{connector}->{path}:$this->{connector}->{host}:3306";
-		$this->{connector}->{handle} =
-			DBI->connect(
-				$dsn,
-				$this->{connector}->{user},
-				$this->{connector}->{pass},
-				{mysql_auto_reconnect=>1}
-				) or
-			die "! Cannot connect to DB $this->{connector}->{name} server: $DBI::errstr\n";
+	if (! $this->{connector}{handle}->ping) {
+		$dsn = "DBI:mysql:$this->{connector}{path}:$this->{connector}{host}:3306";
+		$this->{connector}{handle} =
+			DBI->connect($dsn,$this->{connector}{user},$this->{connector}{pass},{mysql_auto_reconnect=>1})
+			or die "! Cannot connect to DB $this->{connector}{name} server: $DBI::errstr\n";
 		}
-	return 1;	#returns true because false=die
+	return 1;
 	}
 
-##
 # simple query processor for limited amounts of data
 #
-#	@param string $sql				: SQL query string text
-#	@return mixed					: a ref. to an array of array refs. (results)
-#
+#	param:	SQL query string text
+#	return: a ref. to an array of array refs. (results)
+
 sub query {
 	my ($this,$query) = @_;
 	my ($cx,$sth,$results);
@@ -172,9 +167,8 @@ sub query {
 	return $results;
 	}
 
-##
 # load the list of databases into our connector
-#
+
 sub loadDatabases {
 	my $this = shift;
 	my ($cx,$results,$dbname);
@@ -194,45 +188,42 @@ sub loadDatabases {
 		}
 	}
 
-##
 # select a specific database for subsequent operations
 #
-#	@param string $database			: name of database to 'use'
-#
+#	param: name of database to 'use'
+
 sub selectDatabase {
 	my ($this,$database) = @_;
 	my $cx = $this->{connector};
-	$this->loadDatabases() unless (defined $cx->{databases});
-	return unless (exists $cx->{databases}->{$database});
+	$this->loadDatabases unless (defined $cx->{databases});
+	return unless (exists $cx->{databases}{$database});
 	$cx->{database} = $database;
 	$this->query("USE $database");
 	}
 
-##
 # load the list of tables for a database
 #
-#	@param string $database			: (optional) database name
-#
+#	param: (optional) database name
+
 sub loadTables {
 	my ($this,$database) = @_;
 	my ($cx,$db,$results);
 	$cx = $this->{connector};		# ref to our connector object
 	$database ||= $cx->{database};	# provided or use default db name
 	$this->selectDatabase($database);	# focus this database
-	$cx->{databases}->{$database} = {};		# init the database tables list
-	$db = $cx->{databases}->{$database};	# ref to THE database
+	$cx->{databases}{$database} = {};		# init the database tables list
+	$db = $cx->{databases}{$database};	# ref to THE database
 	$db->{name} = $database;		# save the name
 	$results = $this->query("SHOW TABLES FROM $database");
 	$db->{$_->[0]} = undef foreach (@{$results});
 	}
 
-##
 # select a table from a database for subsequent use
 #	note: if the structure is not present, create it
 #
-#	@param string $table			: table as xxxxx or xxxxx.yyyyy
-#	@return ref						: returns a ref. to the table hash
-#
+#	param:	table as xxxxx or xxxxx.yyyyy
+#	returns: a ref. to the table hash
+
 sub selectTable {
 	my ($this,$table) = @_;
 	my ($cx,$database,$db,$tab,$results,$column);
@@ -245,8 +236,8 @@ sub selectTable {
 		$database ||= $cx->{database};
 		}
 	$cx->{database} = $database;
-	$this->loadTables($database) unless (defined $cx->{databases}->{$database});
-	$db = $cx->{databases}->{$database};
+	$this->loadTables($database) unless (defined $cx->{databases}{$database});
+	$db = $cx->{databases}{$database};
 	return undef unless (exists $db->{$table});
 	return $db->{$table} if (defined $db->{$table});
 	$db->{$table} = {};				# init the table hash
@@ -272,12 +263,11 @@ sub selectTable {
 	return $tab;
 	}
 
-##
 # return a ref. to the properties list for a table
 #
-#	@param string $table			: name of the table as xxxxx or xxxx.yyyy
-#	@return ref						: ref. to the properties list array
-#
+#	param:	name of the table as xxxxx or xxxx.yyyy
+#	return:	ref. to the properties list array
+
 sub properties {
 	my ($this,$table,$database) = @_;
 	my $tab = $this->selectTable($table,$database);
@@ -285,13 +275,12 @@ sub properties {
 	return $tab->{properties};
 	}
 
-##
 # fetch a single record from a table by primary key
 #
-#	@param string $table			: name of the table as xxxxx or xxxx.yyyy
-#	@param mixed $key				: key value (int or string)
-#	@return object					: record as object/hash or null
-#
+#	param:	name of the table as xxxxx or xxxx.yyyy
+#	param:	key value (int or string)
+#	return:	record as object/hash or null
+
 sub fetch {
 	my ($this,$table,$key) = @_;
 	my ($cx,$tab,$fx,@fields,$property,$format,$column,$query,$sth,$record);
@@ -320,74 +309,68 @@ sub fetch {
 	return $record;
 	}
 
-##
 # pseudonym/alias for fetch:
-#
+
 sub fetchRecord {
 	my ($this,$table,$key) = @_;
 	return $this->fetch($table,$key);
 	}
 
-##
 # fetch a single column from a single record
 #
-#	@param string $query	: query string to fetch data
-#	@return mixed			: the single column result
-#
+#	param:	query string to fetch data
+#	return:	the single column result value
+
 sub fetchValue {
 	my ($this,$query) = @_;
 	$query .= " LIMIT 1" unless ($query =~ /limit\s+\d+/i);
 	my $result = $this->query($query);
-	return $result->[0][0];			# return the single column
+	return $result->[0][0];	# return the single value
 	}
 
-##
 # fetch a list of values from the database
-#	@param string $query	: query string to produce a list
-#	@return ref				: returns a ref to an array of selected values
-#
+#	param:	query string to produce a list
+#	return:	returns a ref to an array of selected values
+
 sub fetchValues {
 	my ($this,$query) = @_;
 	my ($result,$list);
 	$result = $this->query($query);
 	$list = [];
 	push @{$list},$_->[0] foreach(@{$result});
-	return $list;	# return the list
+	return $list;
 	}
 
-##
 # fetch a hash of name=>value pairs from the database
-#	@param string $query	: query string to produce a list of [name,value] arrays
-#	@return ref				: returns a ref to a hash of name=>value pairs
-#
+#	param:	query string to produce a list of [name,value] arrays
+#	return:	a ref to a hash of name=>value pairs
+
 sub fetchChoices {
 	my ($this,$query) = @_;
 	my ($result,$hash);
 	$result = $this->query($query);
 	$hash = {};
 	$hash->{$_->[0]} = $_->[1] foreach(@{$result});
-	return $hash;	# return the hash
+	return $hash;
 	}
 
-##
 # fetch a list of records using a query
 #
-#	@param string $query			: query string to fetch the data
-#	@return ref						: ref to array of arrays
-#
+#	param:	query string to fetch the data
+#	return:	ref to array of arrays
+
 sub fetchAllRecords {
 	my ($this,$query) = @_;
 	return $this->query($query);
 	}
 
-##
 # fetch a single record as an object
 # using a caller-provided query
 #
-#	@param string $query			: query string to fetch one record
-#	@param string $class			: (optional) destination class for object
-#	@return object ref				: ref to object/hash or undef
-#
+#	param:	query string to fetch one record
+#	param:	(optional) destination class for object
+#	return:	ref to object/hash or undef
+
 sub fetchObject {
 	my ($this,$query,$class) = @_;
 	my ($cx,$sth,$hash,$object);
@@ -437,12 +420,12 @@ sub fetchObjects {
 	return $this->fetchAllRecordObjects($query,$class);
 	}
 
-##
 # store a record into a table & database
 #
-#	@param string $table			: name of the table as xxxx or xxxx.yyyy
-#	@param object $record			: ref to hash with columns & data
-#	@return mixed					: key/id of record stored or null
+#	param:	name of the table as xxxx or xxxx.yyyy
+#	param:	ref to hash with columns & data
+#	return:	key/id of record stored or null
+
 sub store {
 	my ($this,$table,$record) = @_;
 	my ($cx);
@@ -453,13 +436,12 @@ sub store {
 		{return $this->writeRecord($table,$record)}
 	}
 
-##
 # update an existing record on the database
 #
-#	@param string $table			: name of the table as xxxx or xxxx.yyyy
-#	@param object $record			: ref to hash with columns & data
-#	@return mixed					: key/id of record updated or null
-#
+#	param:	name of the table as xxxx or xxxx.yyyy
+#	param:	ref to hash with columns & data
+#	return:	key/id of record updated or null
+
 sub updateRecord {
 	my ($this,$table,$record) = @_;
 	my ($cx,$key,$fx,@pairs,$property,$format,$value,$query);
@@ -483,13 +465,12 @@ sub updateRecord {
 	return $this->query($query);
 	}
 
-##
 # write a record to the database
 #
-#	@param string $table			: name of the table as xxxx or xxxx.yyyy
-#	@param object $record			: ref to hash with columns & data
-#	@return mixed					: key/id of record updated or null
-#
+#	param:	name of the table as xxxx or xxxx.yyyy
+#	param:	ref to hash with columns & data
+#	return:	key/id of record updated or null
+
 sub writeRecord {
 	my ($this,$table,$record) = @_;
 	my ($cx,$fx,@fields,$property,$format,$value,$query,$pkey,$key);
@@ -516,13 +497,12 @@ sub writeRecord {
 	return $key;
 	}
 
-##
 # delete a record from the database
 #
-#	@param string $table			: name of the table as xxxx or xxxx.yyyy
-#	@param mixed $key				: primary key of record to delete
-#	@return int						: count of records deleted
-#
+#	param:	name of the table as xxxx or xxxx.yyyy
+#	param:	primary key of record to delete
+#	return:	count of records deleted
+
 sub deleteRecord {
 	my ($this,$table,$key) = @_;
 	my $tab = ($this->selectTable($table) or return(undef));
@@ -530,12 +510,11 @@ sub deleteRecord {
 	return $this->query("DELETE FROM $table WHERE `$tab->{primarykey}`='$key'");
 	}
 
-##
 # truncate a table (flush), remove all records & reset autoincrement
 #
-#	@param string $table			: name of the table as xxxx or xxxx.yyyy
-#	@param int						: 1=success, null=failure
-#
+#	param:	name of the table as xxxx or xxxx.yyyy
+#	return:	1=success, null=failure
+
 sub flush {
 	my ($this,$table) = @_;
 	my $tab = ($this->selectTable($table) or return(undef));
@@ -543,43 +522,39 @@ sub flush {
 	return $this->query("TRUNCATE TABLE $table");
 	}
 
-##
 # return a count of records on file in a database table
 #
-#	@param string $table			: name of the table as xxxx or xxxx.yyyy
-#	@return int						: count of records in the table
-#
+#	param:	name of the table as xxxx or xxxx.yyyy
+#	return:	count of records in the table
+
 sub records {
 	my ($this,$table,$where) = @_;
 	my $tab = ($this->selectTable($table) or return(undef));
 	return $this->fetchValue("SELECT COUNT(*) AS `records` FROM $table $where");
 	}
 
-#
 ##
-###	Container class - database table-tied object container
-##
+# Container class - database table-tied object container
+#	base class to be extended by other objects
 #
 
 package Container;
 
-##
 # pseudo-constructor - DO NOT INVOKE DIRECTLY !
-#
+
 sub new {
 	my ($this,@keys) = @_;
 	$this->{db} = new Databoss;
 	$this->{structure} = $this->{db}->selectTable($this->{table});
-	$this->{properties} = $this->{structure}->{properties};
+	$this->{properties} = $this->{structure}{properties};
 	scalar(@keys) ? $this->fetch(@keys) : $this->purge();
 	}
 
-##
 # turn record caching on/off
 #
-#	@param boolean $state			: (optional) 'on','off', etc.
-#			note: default is to toggle state on/off
-#
+#	param:	(optional) 'on','off', etc.
+#	note:	default is to toggle state on/off
+
 sub caching {
 	my ($this,$state) = @_;
 	if ($state=~/on|1|y/i) {
@@ -594,11 +569,10 @@ sub caching {
 		{$this->{cache} = {};}
 	}
 
-##
 # store this object's properties in the cache (if on)
 #
-#	@return boolean					: 1=success, 0=failure
-#
+#	return:	1=success, 0=failure
+
 sub encache {
 	my $this = shift;
 	my ($key);
@@ -609,12 +583,11 @@ sub encache {
 	return 1;
 	}
 
-##
 # retrieve this object's properties from the cache (if on)
 #
-#	@param int $key					: key of record in cache
-#	@return boolean					: 1=success, 0=failure
-#
+#	param:	key of record in cache
+#	return:	1=success, 0=failure
+
 sub decache {
 	my ($this,$key) = @_;
 	return 0 unless (defined($this->{cache}) and defined($this->{cache}->{$key}));
@@ -622,12 +595,11 @@ sub decache {
 	return 1;
 	}
 
-##
 # create a new object from parameters
 #
-#	@param mixed @values			: list of values for the properties
-#	@return int						: the id/key of new record/object
-#
+#	param:	list of values for the properties
+#	return:	the id/key of new record/object
+
 sub create {
 	my ($this,@values) = @_;
 	my $lastProperty = scalar(@{$this->{properties}}) - 1;
@@ -640,11 +612,10 @@ sub create {
 	return $this->store;
 	}
 
-##
 # exhibit this object as a text breakout
 #
-#	@return string					: the text for the object
-#
+#	return:	the text for the object
+
 sub exhibit {
 	my $this = shift;
 	my $mask = "%-20s: %s\n";
@@ -656,21 +627,19 @@ sub exhibit {
 	return $result;
 	}
 
-##
 # is this object valid (i.e.-contains a record) ?
 #
-#	@return boolean					: 1=valid, 0=virgin
-#
+#	return:	1=valid, 0=virgin
+
 sub valid {
 	my $this = shift;
 	return $this->{$this->{structure}->{primarykey}} ? 1 : 0;
 	}
 
-##
 # purge the data properties for this object
 #	note: where a default is defined on the database,
 #		  that property will be set to the default.
-#
+
 sub purge {
 	my $this = shift;
 	my ($fx,$property,$format,$default);
@@ -685,20 +654,18 @@ sub purge {
 		}
 	}
 
-##
 # merge another hash/object's properties with this object
 #
-#	@param object $object			: ref. to another hash/object
-#
+#	param:	ref. to another hash/object
+
 sub merge {
 	my ($this,$object) = @_;
 	return unless defined($object);
 	$this->{$_} = $object->{$_} foreach (@{$this->{properties}});
 	}
 
-##
 # enforce value integrity for the properties in this object
-#
+
 sub checkValueIntegrity {
 	my $this = shift;
 	my ($fx,$property,$value,$format,$default);
@@ -740,12 +707,11 @@ sub checkValueIntegrity {
 		}
 	}
 
-##
 # fetch a database.table record into this object
 #
-#	@param array @keys				: key(s) of object on database
-#	@return mixed					: id of record or undef
-#
+#	param:	key(s) of object on database
+#	return:	id of record or undef
+
 sub fetch {
 	my ($this,@keys) = @_;
 	my (@fieldlist,$fx,$fields,$query,$result);
@@ -790,11 +756,10 @@ sub fetch {
 		}
 	}
 
-##
 # store this object into the database.table
 #
-#	@return mixed					: key of object stored or undef
-#
+#	return:	key of object stored or undef
+
 sub store {
 	my $this = shift;
 	my $result;
@@ -804,11 +769,10 @@ sub store {
 	return $result
 	}
 
-##
 # update the record for this object
 #
-#	@return mixed					: key of record updated or null
-#
+#	return:	key of record updated or null
+
 sub updateRecord {
 	my $this = shift;
 	my $result = $this->{db}->updateRecord($this->{table},$this);
@@ -816,11 +780,10 @@ sub updateRecord {
 	return $result;
 	}
 
-##
 # write/rewrite this object to database record
 #
-#	@return mixed					: key of record written or null
-#
+#	return:	key of record written or null
+
 sub writeRecord {
 	my $this = shift;
 	my $result = $this->{db}->writeRecord($this->{table},$this);
@@ -828,12 +791,11 @@ sub writeRecord {
 	return $result;
 	}
 
-##
 # delete a record from the table for this object
 #
-#	@param mixed $key				: (optional) key to delect else prikey
-#	@return int						: count of records deleted or null
-#
+#	param:	(optional) key to delect else prikey
+#	return:	count of records deleted or null
+
 sub deleteRecord {
 	my ($this,$key) = @_;
 	$key = $this->{$this->{properties}->[0]} unless $key;
@@ -842,9 +804,8 @@ sub deleteRecord {
 	return $result
 	}
 
-##
 # flush all records from table for this class
-#
+
 sub flush {
 	my $this = shift;
 	$this->{cache} = {} if (defined $this->{cache});
