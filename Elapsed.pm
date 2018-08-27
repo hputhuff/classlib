@@ -11,11 +11,10 @@ use constant DAY	=> 86400;		# one day
 use constant HOUR	=> 3600;		# one hour
 use constant MINUTE	=> 60;			# one minute
 
-##
 #	Constructor
 #
 #	returns:		Elapsed object w/start timestamp set
-#
+
 sub new {
 	my $class = shift;
 	my $this = {};
@@ -25,22 +24,20 @@ sub new {
 	return $this;
 	}
 
-##
 #	lap - record a lap or interval
 #
 #	returns:		elapsed time in seconds
-#
+
 sub lap {
 	my $this = shift;
 	$this->{finish} = time;
 	return ($this->{elapsed} = ($this->{finish} - $this->{start}));
 	}
 
-##
 #	show - return a string display for elapsed time
 #
 #	returns:		string as [nn day[s] ][nn hour[s] ][nn minute[s] ]nn second[s]
-#
+
 sub show {
 	my $this = shift;
 	my ($seconds,$slurp,$days,$hours,$mins,$result);
