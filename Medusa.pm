@@ -44,9 +44,9 @@ BEGIN {
 			"connections" => {
 				"connection" => {
 					"localhost" => {
-						"user" => "<username>",
-						"host" => "<hostname>",
-						"pass" => "<password>"
+						"user" => "{username}",
+						"host" => "{hostname}>",
+						"pass" => "{password}>"
 						},
 					"dbh" => {
 						}
