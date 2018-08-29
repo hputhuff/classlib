@@ -21,45 +21,54 @@ use XML::Simple;
 
 # constants, default values:
 
+use constant MEDUSA_PACKAGE  => "Medusa.pm";
 use constant MEDUSA_XML_FILE => "Medusa.xml";
 
 # class (& public) properties
 
-our $medusa;
+our $packageName;
+our $libPath;
 our $xmlFile;
 our $xml;
+our $medusa;
 
 # initialize class properties:
 
 BEGIN {
-	$medusa = {
-		"nomenclature" => {
-			"description"	=> "A low-level interface class library",
-			"author"			=> "Harley H. Puthuff",
-			"name"			=> "Medusa",
-			"version"		=> "v8.1",
-			"copyright"		=> "Copyright 2008-2018, Your Showcase"
-			},
-		"databoss" => {
-			"connections" => {
-				"connection" => {
-					"localhost" => {
-						"user" => "{username}",
-						"host" => "{hostname}>",
-						"pass" => "{password}>"
-						},
-					"dbh" => {
-						}
-					}
-				},
-			"defaultConnection" => "localhost"
-			}
-		};
+my $default = <<'XML';
+<?xml version="1.0" encoding="UTF-8"?>
+<medusa>
+ <nomenclature>
+	<name>Medusa</name>
+	<version>v8.1</version>
+	<author>Harley H. Puthuff</author>
+	<copyright>Copyright 2008-2018, Your Showcase</copyright>
+	<description>A low-level interface class library</description>
+ </nomenclature>
+ <databoss>
+  <connections>
+	<connection	name="localhost" host="localhost" user="{username}"	pass="{password}"/>
+  </connections>
+  <defaultConnection>localhost</defaultConnection>
+ </databoss>
+</medusa>
+XML
+	$packageName = MEDUSA_PACKAGE;
+	$libPath = $INC{$packageName};
 	$xmlFile = MEDUSA_XML_FILE;
 	$xml = new XML::Simple;
-	$medusa = $xml->XMLin($xmlFile) if (-e $xmlFile);
-	}
-
+	$medusa = $xml->XMLin($default);			# default configuration
+	if (-e $xmlFile) {
+		$medusa = $xml->XMLin($xmlFile);		# local configuration
+		}
+	elsif ($libPath) {
+		$libPath =~ /^(\S+\/)/; $libPath = $1 . MEDUSA_XML_FILE;
+		if (-e $libPath) {
+			$xmlFile = $libPath;
+			$medusa = $xml->XMLin($xmlFile);	# library configuration
+			}
+		}
+}
 
 # retrieve the connector for a dbms connection
 #
