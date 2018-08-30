@@ -15,6 +15,7 @@ no if $] >= 5.017011, warnings => 'experimental::smartmatch';
 
 ##
 # Medusa class - base class for the Medusa library
+#--------------------------------------------------
 #
 package Medusa;
 use XML::Simple;
@@ -543,12 +544,16 @@ sub records {
 
 ##
 # Container class - database table-tied object container
+#--------------------------------------------------------
 #	base class to be extended by other objects
 #
 
 package Container;
 
 # pseudo-constructor - DO NOT INVOKE DIRECTLY !
+#	Note:	the first parameter may be either
+#				- a Databoss object or
+#				- the 1st or only column for a key
 
 sub new {
 	my ($this,@keys) = @_;
@@ -825,10 +830,9 @@ sub flush {
 	return $this->{db}->flush($this->{table});
 	}
 
-#
 ##
-###	Date class - date & time objects
-##
+# Date class - date & time objects
+#----------------------------------
 #
 
 package Date;
