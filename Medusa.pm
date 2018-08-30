@@ -73,15 +73,15 @@ XML
 # retrieve the connector for a dbms connection
 #
 #	param:	 (optional) )name of the connector
-#	returns:	 a ref. to the connector hash
+#	returns:	 a ref. to the connector hash or null
 
 sub getConnector {
 	my ($class,$name) = @_;
 	my $connector;
 	$name ||= $medusa->{databoss}{defaultConnection};
 	$connector = $medusa->{databoss}{connections}{connection}{$name};
-	die qq|! Cannot locate Medusa Connector: $name !| unless $connector;
-	$connector->{name} ||= $name; # save its name
+	return undef unless $connector;
+	$connector->{name} ||= $name;
 	return $connector;
 	}
 
@@ -398,13 +398,12 @@ sub fetchObject {
 		}
 	}
 
-##
 # fetch a list of record objects/hashes using a query
 #
-#	@param string $query			: query string to fetch the data
-#	@param string $class			: (optional) destination class for the objects
-#	@return ref						: ref to a list of hash references
-#
+#	param:	query string to fetch the data
+#	param:	(optional) destination class for the objects
+#	return:	ref to a list of hash references
+
 sub fetchAllRecordObjects {
 	my ($this,$query,$class) = @_;
 	my ($cx,$sth,$record,$object,$result);
@@ -553,7 +552,12 @@ package Container;
 
 sub new {
 	my ($this,@keys) = @_;
-	$this->{db} = new Databoss;
+	if (ref $keys[0]) {
+		$this->{db} = shift @keys;
+		}
+	else {
+		$this->{db} = new Databoss;
+		}
 	$this->{structure} = $this->{db}->selectTable($this->{table});
 	$this->{properties} = $this->{structure}{properties};
 	scalar(@keys) ? $this->fetch(@keys) : $this->purge();
