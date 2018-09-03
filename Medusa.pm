@@ -88,6 +88,7 @@ sub getConnector {
 
 ##
 # Databoss class - database manager
+#-----------------------------------
 #
 
 package Databoss;
@@ -534,6 +535,7 @@ sub flush {
 # return a count of records on file in a database table
 #
 #	param:	name of the table as xxxx or xxxx.yyyy
+#	param:	(optional) where clause to filter count
 #	return:	count of records in the table
 
 sub records {

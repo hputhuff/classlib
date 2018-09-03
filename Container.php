@@ -15,6 +15,7 @@ abstract class Container {
 
 	public	$database;			// name of the database
 	public	$table;				// database table name
+	public	$connection;		// name of connector
 	public	$db;				// handle to Databoss object
 	public	$structure;			// structure of table on db
 	public	$properties;		// list of fields/properties
@@ -35,6 +36,7 @@ public function __construct() {
 	else {
 		$this->db = new Databoss;
 		}
+	$this->connection = $this->db->connector->name;
 	$this->db->focus($this->database);
 	$this->structure =& $this->db->structure($this->table,$this->database);
 	$this->properties =& $this->structure['properties'];
