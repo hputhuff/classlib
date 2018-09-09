@@ -7,8 +7,10 @@
 
 package Cgi;
 
-#-------Internal: send line to STDOUT (w/newline appended)
+##
+# Internal: send line to STDOUT (w/newline appended)
 #	P1 = text of line
+#
 sub put ($) {print STDOUT shift(),"\n"}
 
 #-------Internal: compute a cookie date/expiration in GMT:

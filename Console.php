@@ -7,8 +7,8 @@
  *  \____\___/|_| |_|___/\___/|_|\___|
  *
  * Console.php - Console (STDOUT) handler
- * May 2016 by Harley H. Puthuff
- * Copyright 2016, Your Showcase on the Internet
+ * Sep 2018 by Harley H. Puthuff
+ * Copyright 2016-18, Your Showcase on the Internet
  */
 
 class Console {
@@ -65,15 +65,15 @@ public function read($prompt=null,$default=null) {
 	return $buffer;
 	}
 
-##
-# confirm a decision or action
-#
-#	@param string				: prompt text
-#	@return boolean				: 0=false, 1=true
-#
+/**
+ * confirm a decision or action
+ *
+ *	@param string				: prompt text
+ *	@return boolean				: 0=false, 1=true
+ */
 public function confirm($prompt) {
-	$result = $this->read($prompt." [N,y]");
-	return (!$result || preg_match('/n/i',$result)) ? 0 : 1;
+	$result = $this->read($prompt." [Y,n]");
+	return (preg_match('/n/i',$result)) ? 0 : 1;
 	}
 	
 /**

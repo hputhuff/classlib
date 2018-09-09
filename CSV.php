@@ -97,6 +97,8 @@ public function data($source=null) {
 		$values[] = $source;
 	else
 		return false;
+	for ($ix=0; $ix<sizeof($values); ++$ix)
+		$values[$ix] = str_replace('"','""',$values[$ix]);
 	return '"'.join('","',$values).'"'."\n";
 	}
 
