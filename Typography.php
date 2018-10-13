@@ -15,9 +15,10 @@ class Typography {
 
 // special characters:
 
-	public static $copyright	= '©';
-	public static $trademark	= '®';
-	public static $bullet		= "·";
+	public static $copyright		= '©';
+	public static $registered		= '®';
+	public static $trademark		= '™';
+	public static $bullet				= "·";
 
 }
 ?>

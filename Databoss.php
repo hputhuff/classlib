@@ -120,7 +120,7 @@ public function focus($database) {
 	$ref =& $this->connector->databases[$database];
     if (is_array($ref) && count($ref)) return true;
 	$ref = array();
-	$results = $this->connector->db->query("SHOW TABLES FROM $database");
+	$results = $this->connector->db->query("SHOW TABLES FROM `$database`");
 	while (list($table) = $results->fetch_row()) {
 		$ref[$table] = null;
 		}
@@ -178,7 +178,7 @@ public function &structure($table=null,$database=null) {
 	$focus['formats'] = array();
 	$focus['defaults'] = array();
 	$query = $database ?
-		"SHOW COLUMNS FROM {$database}.{$table}" :
+		"SHOW COLUMNS FROM `{$database}`.{$table}" :
 		"SHOW COLUMNS FROM $table";
 	$results = $this->connector->db->query($query);
 	if (!$results || $this->connector->db->errno) {
