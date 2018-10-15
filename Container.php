@@ -138,7 +138,7 @@ public function fetch($k1=null,$k2=null,$k3=null) {
 			$fieldList[] = "`{$this->structure['properties'][$ix]}`";
 	$fieldList = join(',',$fieldList);
 	if ($k2!=null)
-		$query = "SELECT {$fieldList} FROM {$this->database}.{$this->table} " .
+		$query = "SELECT {$fieldList} FROM `{$this->database}`.{$this->table} " .
 				 "WHERE `{$this->properties[0]}`='{$k1}' " .
 				 "AND `{$this->properties[1]}`='{$k2}' " .
 				 ($k3 ? "AND `{$this->properties[2]}`='{$k3}' " : "") .
@@ -147,11 +147,11 @@ public function fetch($k1=null,$k2=null,$k3=null) {
 	if ( preg_match('/int/i',$this->structure['formats'][0]) &&
 		!preg_match('/int/i',$this->structure['formats'][1]) &&
 		!is_numeric($k1))
-		$query = "SELECT {$fieldList} FROM {$this->database}.{$this->table} " .
+		$query = "SELECT {$fieldList} FROM `{$this->database}`.{$this->table} " .
 				 "WHERE `{$this->properties[1]}` LIKE '%{$k1}%' " .
 				 "LIMIT 1";
 	else
-		$query = "SELECT {$fieldList} FROM {$this->database}.{$this->table} " .
+		$query = "SELECT {$fieldList} FROM `{$this->database}`.{$this->table} " .
 				 "WHERE `{$this->properties[0]}`='{$k1}' " .
 				 "LIMIT 1";
 	$sqlObject = $this->db->fetchObject($query);
@@ -207,7 +207,7 @@ public function store() {
  * @return mixed				: key of record updated or false				
  */
 public function update() {
-	return $this->db->update("{$this->database}.{$this->table}",$this);
+	return $this->db->update("`{$this->database}`.{$this->table}",$this);
 	}
 
 /**
@@ -216,7 +216,7 @@ public function update() {
  * @return mixed				: key of record written or false
  */
 public function write() {
-	return $this->db->write("{$this->database}.{$this->table}",$this);
+	return $this->db->write("`{$this->database}`.{$this->table}",$this);
 	}
 	
 /**
@@ -226,7 +226,7 @@ public function write() {
  * @return int					: count of records deleted or false
  */
 public function delete($key=null) {
-	return $this->db->delete("{$this->database}.{$this->table}",
+	return $this->db->delete("`{$this->database}`.{$this->table}",
 		($key ? $key : $this->{$this->structure['primarykey']}));
 	}
 
@@ -236,7 +236,7 @@ public function delete($key=null) {
  * @return int					: count of records or false
  */
 public function truncate() {
-	$database = $this->database ? "{$this->database}." : "";
+	$database = $this->database ? "`{$this->database}`." : "";
  	$query = "TRUNCATE TABLE {$database}{$this->table}";
 	return $this->db->query($query);
 	}
@@ -272,7 +272,7 @@ public function export($type=null,$where=null) {
 			$filename = "{$this->table}.csv";
 			break;
 		}
-	$fullname = $this->db->export("{$this->database}.{$this->table}",$options,$where);
+	$fullname = $this->db->export("`{$this->database}`.{$this->table}",$options,$where);
 	$filesize = filesize($fullname);
 	header("Content-Type: {$mimetype}");
 	header("Content-Length: {$filesize}");
