@@ -114,6 +114,7 @@ public function __construct($connection=null,$database=null) {
  */
 public function focus($database) {
 	if (!$database && $this->connector->database) return true;
+	if ($database == $this->connector->database) return true;
 	if (! array_key_exists($database,$this->connector->databases)) return false;
 	$this->connector->db->select_db($database);
 	$this->connector->database = $database;
