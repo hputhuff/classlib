@@ -198,7 +198,7 @@ public function store() {
 			}
 		}
 	$this->db->focus($this->database);
-	return $this->db->store("{$this->database}.{$this->table}",$this);
+	return $this->db->store($this->table,$this);
 	}
 
 /**
@@ -207,7 +207,8 @@ public function store() {
  * @return mixed				: key of record updated or false				
  */
 public function update() {
-	return $this->db->update("`{$this->database}`.{$this->table}",$this);
+	$this->db->focus($this->database);
+	return $this->db->update($this->table,$this);
 	}
 
 /**
@@ -216,7 +217,8 @@ public function update() {
  * @return mixed				: key of record written or false
  */
 public function write() {
-	return $this->db->write("`{$this->database}`.{$this->table}",$this);
+	$this->db->focus($this->database);
+	return $this->db->write($this->table,$this);
 	}
 	
 /**
@@ -226,8 +228,8 @@ public function write() {
  * @return int					: count of records deleted or false
  */
 public function delete($key=null) {
-	return $this->db->delete("`{$this->database}`.{$this->table}",
-		($key ? $key : $this->{$this->structure['primarykey']}));
+	$this->db->focus($this->database);
+	return $this->db->delete($this->table,($key ? $key : $this->{$this->structure['primarykey']}));
 	}
 
 /**
@@ -236,8 +238,8 @@ public function delete($key=null) {
  * @return int					: count of records or false
  */
 public function truncate() {
-	$database = $this->database ? "`{$this->database}`." : "";
- 	$query = "TRUNCATE TABLE {$database}{$this->table}";
+	$this->db->focus($this->database);
+	$query = "TRUNCATE TABLE {$this->table}";
 	return $this->db->query($query);
 	}
 
@@ -272,7 +274,8 @@ public function export($type=null,$where=null) {
 			$filename = "{$this->table}.csv";
 			break;
 		}
-	$fullname = $this->db->export("`{$this->database}`.{$this->table}",$options,$where);
+	$this->db->focus($this->database);
+	$fullname = $this->db->export($this->table,$options,$where);
 	$filesize = filesize($fullname);
 	header("Content-Type: {$mimetype}");
 	header("Content-Length: {$filesize}");

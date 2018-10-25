@@ -118,7 +118,7 @@ public function focus($database) {
 	$this->connector->db->select_db($database);
 	$this->connector->database = $database;
 	$ref =& $this->connector->databases[$database];
-    if (is_array($ref) && count($ref)) return true;
+	if (is_array($ref) && count($ref)) return true;
 	$ref = array();
 	$results = $this->connector->db->query("SHOW TABLES FROM `$database`");
 	while (list($table) = $results->fetch_row()) {
