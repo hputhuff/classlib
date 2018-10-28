@@ -14,8 +14,6 @@
 
 if (! defined("MEDUSA")) {define("MEDUSA","20180801");
 
-class Object extends stdClass {}		// generic class
-
 class Medusa {							// core Medusa class
 
 	public static $scriptPath;			// where original script lives
