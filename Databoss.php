@@ -32,7 +32,7 @@ private static function loadConnections() {
 	self::$connections = array();
 	$available = Medusa::getDatabossConnections();
 	foreach ($available as $connection) {
-		self::$connections[] = new Object;
+		self::$connections[] = new stdClass;
 		$ref =& self::$connections[sizeof(self::$connections)-1];
 		$ref->name = $connection[0];
 		$ref->host = $connection[1];
