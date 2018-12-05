@@ -101,6 +101,21 @@ return <<<ETX
 <META HTTP-EQUIV="EXPIRES" CONTENT="Sat, 01 Jan 2000 00:00:00 GMT">
 ETX;
 }
+
+/**
+ * Produce an html summary table of tag: value elements
+ * @param array $hash
+ * @param string $class (optional)
+ * @return string html
+ */
+public static function summaryTable($hash,$class=null) {
+	$summary = "<table" . ($class ? " class=\"{$class}\"" : "") . ">\n";
+	foreach ($hash as $key=>$value)
+		$summary .= "<tr><td>{$key}:</td><th>{$value}</th></tr>\n";
+	$summary .= "</table>\n";
+	return $summary;
+	}
+
 /*
  * Create HTML for a <select ...> field:
  *	P1 = name of the field
