@@ -110,8 +110,14 @@ ETX;
  */
 public static function summaryTable($hash,$class=null) {
 	$summary = "<table" . ($class ? " class=\"{$class}\"" : "") . ">\n";
-	foreach ($hash as $key=>$value)
-		$summary .= "<tr><td>{$key}:</td><th>{$value}</th></tr>\n";
+	foreach ($hash as $key=>$value) {
+		if (preg_match('/^\w+@\w+/i',$value))
+			$value = "<a href=\"mailto:{$value}\">{$value}</a>";
+		else
+		if (preg_match('/^http/i',$value))
+			$value = "<a href=\"{$value}\" target=\"_blank\">{$value}</a>";
+		$summary .= "<tr><td>{$key}:&nbsp;</td><th>{$value}</th></tr>\n";
+		}
 	$summary .= "</table>\n";
 	return $summary;
 	}
