@@ -7,7 +7,7 @@
  * |____/ \__,_|\__\__,_|
  *
  * Data class - class methods for working with data
- * Copyright 2016, Your Showcase on the Internet
+ * Copyright 2019, Your Showcase on the Internet
  */
 class Data {
 
@@ -215,6 +215,24 @@ public static function limit($str,$limit=40) {
  */
 public static function arrayToString($list) {
 	return "'".join("','",$list)."'";
+	}
+
+/**
+ * Produce a text summary table of key=>value lines
+ * @param array $hash
+ * @return string
+ */
+public static function summaryTable($hash) {
+	$len = 0;
+	foreach (array_keys($hash) as $key) {
+		$klen = strlen($key);
+		if ($klen > $len) $len = $klen;
+		}
+	$format = "%-{$len}s : %s\n";
+	$summary = "";
+	foreach ($hash as $key=>$value)
+		$summary .= sprintf($format,$key,$value);
+	return $summary;
 	}
 
 }
