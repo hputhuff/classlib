@@ -8,11 +8,13 @@
  *
  * Medusa.php - Medusa header file
  * (must be included first in script!)
- * v8.1 August 2018 by Harley H. Puthuff
- * Copyright 2008-2018, Your Showcase on the Internet
+ * v8.2 August 2019 by Harley H. Puthuff
+ * Copyright 2008-2019, Your Showcase on the Internet
  */
 
-if (! defined("MEDUSA")) {define("MEDUSA","20180801");
+if (! defined("MEDUSA")) {define("MEDUSA","20190819");
+
+class anonymousObject {}		// generic class/object
 
 class Medusa {							// core Medusa class
 
