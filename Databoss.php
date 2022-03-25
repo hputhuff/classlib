@@ -593,7 +593,8 @@ public function write($table,&$source) {
 		else
 		if (preg_match('/^bit/i',$structure['formats'][$ix]))
 			$value = $value ? "b'1'" : "b'0'";
-		else
+    else
+    if (! preg_match('current_timestamp()',$value))
 			$value = "'" . $this->escape($value) . "'";
 		array_push($fields,$value);
 		}

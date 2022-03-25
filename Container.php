@@ -89,7 +89,7 @@ public function purge() {
 	$defaults =& $this->structure['defaults'];
 	for ($ix=0; $ix<count($properties); ++$ix) {
 		$property = $properties[$ix];	$default = $defaults[$ix];
-		$this->$property = ($default == "CURRENT_TIMESTAMP") ? null : $default;
+		$this->$property = preg_match('/current_timestamp/i',$default) ? null : $default;
 		}
 	}
 
