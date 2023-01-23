@@ -21,23 +21,35 @@ class Simplicity {
  */
 class Databoss {
 
-// object variables
+	private static $reportingEnabled = false;
+	
 	public $database;
 	public $hostname;
 	public $username;
 	public $password;
-	public $db;
+	public $db;				// connection to mysqli
+	public $tables;		// hash of table definitions
 
 // constructor
-function __construct($name,$host=null,$user=null,$pass=null) {
+public function __construct($name,$host=null,$user=null,$pass=null) {
 	$database = $name;
 	$hostname = $host ? $host : Simplicity::$dbHost;
 	$username = $user ? $user : Simplicity::$dbUsername;
 	$password = $pass ? $pass : Simplicity::$dbPassword;
-	if (!$database) {
+	if (! self::$reportingEnabled) {
+		mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+		self::$reportingEnabled = true;
+		}
+	if (!$database ||
+			!($this->db = new mysqli($hostname,$username,$password,$database))) {
 		echo "Databoss: cannot obtain database connection for: $database !";
 		return null;
 		}
+	}
+
+// destructor
+public function __destruct() {
+	if ($this->db) $this->db->close();
 	}
 
 }
