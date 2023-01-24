@@ -42,9 +42,12 @@ public function __construct($name,$host=null,$user=null,$pass=null) {
 		}
 	if (!$database ||
 			!($this->db = new mysqli($hostname,$username,$password,$database))) {
-		echo "Databoss: cannot obtain database connection for: $database !";
-		return null;
+		die("Databoss: cannot obtain database connection for: $database !");
 		}
+	$this->tables = array();
+	$results = $this->db->query("SHOW TABLES");
+	while (list($table) = $results->fetch_row()) $this->tables[$table] = null;
+	$results->close();
 	}
 
 // destructor
