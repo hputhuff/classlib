@@ -62,9 +62,19 @@ public function __destruct() {
 	if ($this->db) $this->db->close();
 	}
 
+// obtain the last error that occured as a string
+
+public function error() {
+	$errno = $this->db->errno;
+	$error = $this->db->error;
+	return $errno ? "$error ($errno)" : null;
+	}
+
 // Log database/SQL errors
 
 public function logErrors($query) {
+	if (! ($message = $this->error())) return;
+	Log::entry($message,$query);
 	}
 
 // obtain the structure for a table on the database
@@ -115,12 +125,44 @@ public function properties($table=null) {
 	return $structure['properties'];
 	}
 
-// obtain the last error that occured as a string
+// return a string properly escaped for use in a query
 
-public function error() {
-	$errno = $this->db->errno;
-	$error = $this->db->error;
-	return $errno ? "$error ($errno)" : null;
+public function escape($string) {
+	return $this->db->escape_string($string);
+	}
+
+// limit query results to one record
+
+public function limitOne($query) {
+	if (! preg_match('/limit\s+\d+/i',$query)) $query .= " LIMIT 1";
+	return $query;
+	}
+
+// return the last inserted id for autoincrement tables
+
+public function lastInsertId() {
+	return $this->db->insert_id;
+	}
+
+// perform a low-level query against the database & return result
+
+public function query($query=null) {
+	if (! $query) return null;
+	$result = $this->db->query($query);
+	if ($result===false) {
+		$this->logErrors($query);
+		return false;
+		}
+	if ($result===true) {
+		return $this->db->affected_rows;
+		}
+	if (is_object($result)) {
+		$resultSet = array();
+		while ($row = $result->fetch_row()) $resultSet[] = $row;
+			$result->close();
+			return $resultSet;
+			}
+	return null;
 	}
 
 }
