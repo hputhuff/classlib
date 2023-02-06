@@ -75,6 +75,7 @@ public function error() {
 public function logErrors($query) {
 	if (! ($message = $this->error())) return;
 	Log::entry($message,$query);
+	return false;
 	}
 
 // obtain the structure for a table on the database
@@ -131,38 +132,92 @@ public function escape($string) {
 	return $this->db->escape_string($string);
 	}
 
-// limit query results to one record
-
-public function limitOne($query) {
-	if (! preg_match('/limit\s+\d+/i',$query)) $query .= " LIMIT 1";
-	return $query;
-	}
-
 // return the last inserted id for autoincrement tables
 
 public function lastInsertId() {
 	return $this->db->insert_id;
 	}
 
-// perform a low-level query against the database & return result
+// perform a query against the database & return affected rows
 
-public function query($query=null) {
-	if (! $query) return null;
-	$result = $this->db->query($query);
-	if ($result===false) {
-		$this->logErrors($query);
-		return false;
+public function query($sql=null) {
+	if (! $sql) return 0;
+	$result = $this->db->query($sql);
+	if ($result===false) return 0;
+	if ($result===true) return $this->db->affected_rows;
+	if (!is_object($result)) return 1;
+	$rows = $result->num_rows;
+	$result->close();
+	return $rows;
+	}
+
+// fetch record(s) from the database and return them as a list of object(s)
+
+public function fetch($sql) {
+	$objects = array();
+	if (! ($result = $this->db->query($sql))) return $this->logErrors($sql);
+	while ($obj = $result->fetch_object()) $objects[] = $obj;
+	$result->close();
+	return $objects;
+	}
+
+// fetch a hash of choices (key=>value)
+
+public function fetchChoices($sql) {
+	$choices = array();
+	if (!$result = $this->db->query($sql)) return null;
+	while (list($key,$value) = $result->fetch_row()) $choices[$key] = $value;
+	$result->close();
+	return $choices;
+	}
+
+// store record(s) on the database and return # stored
+
+public function store($sql) {
+	}
+
+// update record(s) on the database and return # updated
+
+public function update($sql) {
+	}
+
+// delete record(s) on the database and return # deleted
+
+public function delete($sql) {
+	}
+
+}
+
+/**
+ * Container class - database table-tied object
+ */
+abstract class Container {
+	public $table;
+	public $db;
+	public $structure;
+	public $properties;
+}
+
+/**
+ * Log class - log messages to syslog
+ */
+
+class Log {
+
+// entry - log an entry
+
+static function entry($message1,$message2=null) {
+	$identity = "Simplicity";
+	openlog($identity,0,LOG_USER);
+	if (is_array($message1) || is_object($message1)) $message1 = print_r($message1,true);
+	$buffer = preg_replace('/[\x00-\x1F\x80-\xFF]/',' ',$message1);
+	syslog(LOG_INFO,preg_replace('/\s+/',' ',$buffer));
+	if ($message2) {
+		if (is_array($message2) || is_object($message2)) $message2 = print_r($message2,true);
+		$buffer = preg_replace('/[\x00-\x1F\x80-\xFF]/',' ',$message2);
+		syslog(LOG_INFO,preg_replace('/\s+/',' ',$buffer));
 		}
-	if ($result===true) {
-		return $this->db->affected_rows;
-		}
-	if (is_object($result)) {
-		$resultSet = array();
-		while ($row = $result->fetch_row()) $resultSet[] = $row;
-			$result->close();
-			return $resultSet;
-			}
-	return null;
+	closelog();
 	}
 
 }
