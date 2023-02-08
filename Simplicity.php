@@ -20,6 +20,7 @@ class Simplicity {
  */
 class Databoss {
 
+	public static $lastDataboss;
 	private static $reportingEnabled = false;
 	
 	public $database;
@@ -54,6 +55,7 @@ public function __construct($name,$host=null,$user=null,$pass=null) {
 	$results = $this->db->query("SHOW TABLES");
 	while (list($table) = $results->fetch_row()) $this->tables[$table] = null;
 	$results->close();
+	self::$lastDataboss = $this;
 	}
 
 // destructor
@@ -174,16 +176,19 @@ public function fetchChoices($sql) {
 // store record(s) on the database and return # stored
 
 public function store($sql) {
+	return $this->query($sql);
 	}
 
 // update record(s) on the database and return # updated
 
 public function update($sql) {
+	return $this->query($sql);
 	}
 
 // delete record(s) on the database and return # deleted
 
 public function delete($sql) {
+	return $this->query($sql);
 	}
 
 }
@@ -196,6 +201,55 @@ abstract class Container {
 	public $db;
 	public $structure;
 	public $properties;
+
+// constructor
+//	0,1 or 2 parameters, any of which can be $db ref or key
+
+public function __construct() {
+	$args = func_get_args(); $key = null;
+	while ($arg = array_shift($args)) {
+		if (is_object($arg))	$this->db = $arg;
+			else								$key = $arg;
+		}
+	if (! $this->db) $this->db = Databoss::$lastDataboss;
+	$this->structure =& $this->db->structure($this->table);
+	$this->properties =& $this->structure['properties'];
+	if ($key)	$this->fetch($key);
+		else		$this->purge();
+	}
+
+// check if this object contains a valid record
+
+public function valid() {
+	return $this->{$this->structure['primarykey']} ? true : false;
+	}
+
+// purge this object & properties
+
+public function purge() {
+	$properties =& $this->structure['properties'];
+	$defaults =& $this->structure['defaults'];
+	for ($ix=0; $ix<count($properties); $ix++) {
+		$property = $properties[$ix];	$default = $defaults[$ix];
+		$this->$property = preg_match('/current_timestamp/i',$default) ? null : $default;
+		}
+	}
+
+// merge properties from another object into this one
+
+public function merge($obj) {
+	}
+
+// fetch a database record and merge it into this object
+
+public function fetch($key) {
+	}
+
+// store this object into the database as a record
+
+public function store() {
+	}
+
 }
 
 /**
