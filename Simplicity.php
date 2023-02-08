@@ -238,11 +238,22 @@ public function purge() {
 // merge properties from another object into this one
 
 public function merge($obj) {
+	if (! is_object($obj)) return false;
+	foreach ($this->properties as $property)
+		$this->$property = $obj->$property;
+	return true;
 	}
 
-// fetch a database record and merge it into this object
+// fetch a database record by key and merge it into this object
 
-public function fetch($key) {
+public function fetch($key=null) {
+	$this->purge();
+	if (!$key) return false;
+	$query = "SELECT * FROM {$this->table} " .
+					 "WHERE `{$this->properties[0]}` = '$key' " .
+					 "LIMIT 1";
+	if ($results = $this->db->fetch($query)) return $this->merge($results[0]);
+	return false;
 	}
 
 // store this object into the database as a record
