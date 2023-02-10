@@ -259,6 +259,37 @@ public function fetch($key=null) {
 // store this object into the database as a record
 
 public function store() {
+	$keyname = $this->structure['primarykey'];
+	$sql = "REPLACE INTO `{$this->table}` VALUES(";
+	$values = [];
+	for ($ix=0; $ix<count($this->properties); $ix++) {
+		$property = $this->properties[$ix];
+		$format = $this->structure['formats'][$ix];
+		$isNumber = preg_match("/(int|decimal|float|double|bit|bool)/i",$format) ? true : false;
+		$value = $this->$property;
+		if ($value==null || $value=="" || preg_match("/^\s*null\s*$/i",$value)) {
+			$values[] = "NULL";
+			continue;
+			}
+		if ($isNumber) {
+			$values[] = $value;
+			continue;
+			}
+		$values[] = '"' . $this->db->escape($value) . '"';
+		}
+	$sql .= join(',',$values) . ')';
+	if (! $this->db->store($sql)) return null;
+	if (! $this->$keyname) $this->$keyname = $this->db->lastInsertId();
+	return $this->$keyname;
+	}
+	
+// delete the database record for this object (key)
+
+public function delete($key=null) {
+	$keyname = $this->structure['primarykey'];
+	if (! $key) $key = $this->$keyname;
+	$sql = "DELETE FROM $table WHERE `{$keyname}`='{$key}'";
+	return $this->db->delete($sql);
 	}
 
 }
