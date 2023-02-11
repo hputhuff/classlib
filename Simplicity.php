@@ -277,6 +277,7 @@ public function store() {
 			}
 		if (preg_match('/timestamp/i',$format) &&
 				preg_match('/current/i',$this->structure['defaults'][$ix])) {
+			$this->$property = null;
 			$values[] = "NULL";
 			continue;
 			}
