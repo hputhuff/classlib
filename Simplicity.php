@@ -275,6 +275,11 @@ public function store() {
 			$values[] = $value;
 			continue;
 			}
+		if (preg_match('/timestamp/i',$format) &&
+				preg_match('/current/i',$this->structure['defaults'][$ix])) {
+			$values[] = "NULL";
+			continue;
+			}
 		$values[] = '"' . $this->db->escape($value) . '"';
 		}
 	$sql .= join(',',$values) . ')';
