@@ -1,7 +1,7 @@
 <?php
 /**
  * Simplicity - A simple PHP framework
- * v1.1, January 2023 by Harley H. Puthuff
+ * v1.1, March 2023 by Harley H. Puthuff
  * Copyright 2023, Your Showcase on the Internet
  */
 
@@ -14,6 +14,237 @@ class Simplicity {
 			'username'	=> "databoss",
 			'password'	=> "dbpasswd"
 			];
+}
+
+/**
+ * Data - class & methods to manipulate data
+ */
+class Data {
+
+/**
+ * sift terms to produce a single term
+ * 
+ * @param array $arguments			: a variable number of terms
+ * @return string					: chosen term or null
+ */
+public static function sift() {
+	foreach (func_get_args() as $arg) if ($arg) return $arg;
+	return null;
+	}
+	
+/**
+ * combine terms to produce a single result
+ * 
+ * @param array $arguments			: a variable number of terms
+ * @return string					: combined terms or null
+ */
+public static function combine() {
+	$provided = func_get_args(); // get all arguments
+	$valued = array();
+	foreach ($provided as $arg) if ($arg) $valued[] = $arg;
+	$values = count($valued);
+	if (! $values) return null;
+	if ($values == 1) return $valued[0];
+	return join(' ',$valued);
+	}
+
+/**
+ * render a displayable name from a db column name or tag or ??
+ * 
+ * @param string $name			: original tag/name
+ * @return string				: rendered for display
+ */
+public static function toDisplayName($name) {
+    $interim = preg_replace('/([a-z0-9])([A-Z])/','$1_$2',$name);
+	$parts = preg_split('/[^0-9a-zA-Z]+/',$interim);
+	foreach ($parts as &$part) $part = ucfirst($part);
+	return join(' ',$parts);
+	}
+
+/**
+ * render a phone number to a displayable string
+ * 
+ * @param string $phone			: phone number w/wo formatting
+ * @return string				: standardized phone# display
+ */
+public static function toDisplayPhone($phone=null) {
+	if (! $phone) return null;
+	$number = preg_replace('/[^0-9]/','',$phone);
+	if (preg_match('/^1?(\d{3})(\d{3})(\d{4})$/',$number,$parts))
+		// US number
+		return "({$parts[1]}) {$parts[2]}-{$parts[3]}";
+	else
+		// non-US number
+		return "+{$number}";
+	}
+
+/**
+ * convert a string to hex notation
+ * 
+ * @param string $string		: ascii string
+ * @return string				: string of hex digits
+ */
+public static function toHex($string) {
+    $hex='';
+    for ($i=0; $i < strlen($string); $i++) {
+        $hex .= dechex(ord($string[$i]));
+        }
+    return strtoupper($hex);
+	}
+
+/**
+ * convert a string of hex digits to ascii
+ * 
+ * @param string $hex			: string of hex digits
+ * @return string				: ascii string
+ */
+public static function toAscii($hex) {
+    $string='';
+    for ($i=0; $i < strlen($hex)-1; $i+=2) {
+        $string .= chr(hexdec($hex[$i].$hex[$i+1]));
+       }
+    return $string;
+	}
+
+/**
+ * mask all but nn digits of a credit card number
+ * 
+ * @param string $number		: full number
+ * @param int $visible			: (optional) digits to be visible [4]
+ * @return string				: masked card number
+ */
+public static function maskCardNumber($number,$visible=4) {
+	$fullsize = strlen($number);
+	if ($visible < $fullsize)
+		$mask = str_repeat('*',$fullsize-$visible) . substr($number,-$visible);
+	else
+		$mask = str_repeat('*',$fullsize);
+	return $mask;
+	}
+
+/**
+ * print breakout of variable
+ * 
+ * @param mixed $thing			: string/array/object
+ */
+public static function breakout(&$thing) {
+	if ($_SERVER['DOCUMENT_ROOT'])
+		echo "<pre style='font:10pt monospace;color:#000;".
+			 "background:#fff;text-align:left;'>\n";
+	print_r($thing);
+	if ($_SERVER['DOCUMENT_ROOT']) echo "</pre>\n";
+	}
+
+/**
+ * exhibit variable with types
+ * 
+ * @param mixed $thing			: int/string/etc.
+ */
+public static function exhibit(&$thing) {
+	echo "<pre>\n";
+	foreach ($thing as $key=>$data) {
+		switch (gettype($data)) {
+			case "boolean":
+				$show = "[boolean]={$data}";
+				break;
+			case "integer":
+				$show = "[integer]={$data}";
+				break;
+			case "double":
+				$show = "[double]={$data}";
+				break;
+			case "string":
+				$show = "[string]={$data}";
+				break;
+			case "array":
+				$show = "[array]";
+				break;
+			case "object":
+				$show = "[object]";
+				break;
+			case "resource":
+				$show = "[resource handle]";
+				break;
+			case "NULL":
+				$show = "NULL";
+				break;
+			default:
+				$show = "-unknown-";
+			}
+		echo "\t$key: $show\n";
+		}
+	echo "</pre>\n\n";
+	}
+
+/**
+ * return a random string of nn characters
+ * 
+ * @param int $length			: size of returned string
+ * @return string				: random string
+ */
+public static function randomString($length) {
+    $characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    $string = "";
+    for ($p = 0; $p < $length; $p++) {
+        $string .= $characters[mt_rand(0,strlen($characters))];
+		}
+    return $string;
+	}
+
+/**
+ * return a Skype-proof string that won't be rendered as a link
+ * 
+ * @param string $text			: plain number or text
+ * @return string				: skype-proof text
+ */
+public static function skypeProof($text) {
+	$half = (int)(strlen($text)/2);
+	return substr($text,0,$half)."<span style='display:none;'>_</span>".substr($text,$half);
+	}
+
+/**
+ * limit a string to no more than nn characters
+ * 
+ * @param string $str			: original string
+ * @param int $limit			: (optional) max size [40]
+ * @return string				: limited string
+ */
+public static function limit($str,$limit=40) {
+	$string = trim($str);
+	$max = 0 + $limit - 3;
+	$size = strlen($string);
+	if (($max < 1) || ($size <= $limit)) return $string;
+	return substr($string,0,$max).'...';
+	}
+
+/**
+ * Return an array converted to a string w/quoted elements
+ * 
+ * @param array $list				: array of elements
+ * @return string					: string as: 'aaa','bbb'...'zzz'
+ */
+public static function arrayToString($list) {
+	return "'".join("','",$list)."'";
+	}
+
+/**
+ * Produce a text summary table of key=>value lines
+ * @param array $hash
+ * @return string
+ */
+public static function summaryTable($hash) {
+	$len = 0;
+	foreach (array_keys($hash) as $key) {
+		$klen = strlen($key);
+		if ($klen > $len) $len = $klen;
+		}
+	$format = "%-{$len}s : %s\n";
+	$summary = "";
+	foreach ($hash as $key=>$value)
+		$summary .= sprintf($format,$key,$value);
+	return $summary;
+	}
+
 }
 
 /**
@@ -302,6 +533,111 @@ public function delete($key=null) {
 }
 
 /**
+ * Email - object / methods for dealing with email & content
+ */
+class Email {
+
+/**
+ * ::check for a valid, single e-mail address
+ * 
+ * @param string $email			: an email address to check (someone@somewhere.com)
+ * @return boolean				: true (valid) or false (invalid)
+ */
+public static function validate($email=null) {
+	$regexp = "^([_a-z0-9-]+)(\.[_a-z0-9-]+)*@([a-z0-9-]+)(\.[a-z0-9-]+)*(\.[a-z]{2,4})$";
+	$valid = false;
+	if (eregi($regexp,$email)) {
+		list($username,$sld) = split("@",$email);
+		if (getmxrr($sld,$mxrecords)) $valid = true;
+		}
+	return $valid;
+	}
+
+/**
+ * ::check any request data for spam and trash it
+ * 
+ * @param string $unit			: (optional) a unit name for logging (Medusa)
+ * @return boolean				: false = no spam present
+ */
+public static function filterSPAM($unit="Medusa") {
+	$expr = "/(href=|link=|url=|porno|optimization)/i";
+	foreach ($_REQUEST as $key => $value) {
+		if (! $value) continue;
+		if (! preg_match($expr,$value)) continue;
+		$ip = $_SERVER['REMOTE_ADDR'];
+		Log::entry(
+			"attempted POSTing of SPAM to {$_SERVER['SERVER_NAME']} from {$ip}",
+			"added {$unit} offender {$ip} to firewall"
+			);
+		exec("/sbin/iptables -A xanadu -s {$ip} -j DROP");
+		exit;
+		}
+	return false;
+	}
+
+/**
+ * ::send an email to a recipient
+ * 
+ * @param string $subject		: the subject line
+ * @param string $message		: the message (plain text or html)
+ * @param string $toEmail		: recipient email (someone@somewhere.com)
+ * @param string $toName		: (optional) recipient name
+ * @param sting $fromEmail		: (optional) originating email address
+ * @param string $fromName		: (optional) originator
+ * @param mixed $cc				: (optional) string or array w/cc recipient(s)
+ * @param mixed $bcc			: (optional) string or array w/bcc recipient(s)
+ * @return boolean				: true (accepted) false (failed)
+ */
+public static function send(
+		$subject,$message,$toEmail,$toName=null,$fromEmail=null,$fromName=null,$cc=null,$bcc=null
+		) {
+	$to = $toEmail;
+	if ($toName) $to = "\"{$toName}\" <{$to}>";
+	$domain = new Url; $domain = $domain->domain;
+	$from = $fromEmail ? $fromEmail : "webmaster@{$domain}";
+	if ($fromName) $from = "\"{$fromName}\" <{$from}>";
+	$ccHeader = is_array($cc) ? join(",",$cc) : $cc;
+	$bccHeader = is_array($bcc) ? join(",",$bcc) : $bcc;
+	$headers =
+        "MIME-Version: 1.0\r\n" .
+        "Content-type: text/plain; charset=iso-8859-1\r\n" .
+        "X-Priority: 3\r\n" .
+        "X-MSMail-Priority: Normal\r\n" .
+        "X-Mailer: {$domain} website\r\n" .
+		"From: {$from}\r\n";
+	if ($ccHeader) $headers .= ("CC: ".$ccHeader."\r\n");
+	if ($bccHeader) $headers .= ("BCC: ".$bccHeader."\r\n");
+	return mail($to,$subject,$message,$headers);
+	}
+
+}
+
+/**
+ * Files - Methods for dealing with files/directories/locations
+ */
+class Files {
+
+/*
+ * Obtain the base directory/path (document root or current directory)
+ *	P1 = (optional) filename to append to returned path string
+ *	returns a string with the path as: /home/user/somewhere.com[/filename]
+ */
+public static function getBasePath($filename=null) {
+	$path = null;
+	if ($_SERVER['DOCUMENT_ROOT'])
+		$path = $_SERVER['DOCUMENT_ROOT'];
+	else
+	if (preg_match('/^(.+\.(biz|com|edu|net|org)).*$/i',$_SERVER['PWD'],$parts))
+		$path = $parts[1];
+	else
+		$path = $_SERVER['PWD'];
+	if ($filename) $path .= "/{$filename}";
+	return $path;
+	}
+
+}
+
+/**
  * Log class - log messages to syslog
  */
 
@@ -321,6 +657,83 @@ static function entry($message1,$message2=null) {
 		syslog(LOG_INFO,preg_replace('/\s+/',' ',$buffer));
 		}
 	closelog();
+	}
+
+}
+
+/**
+ * Math - methods for dealing mathmatically with numbers, currency, etc.
+ */
+class Math {
+
+/*
+ * Convert number or string to pure number format
+ *	P1 = string or number to convert
+ *	returns a pure number value
+ */
+static function toNumber($value) {
+	$result = '' . $value;
+	$minus = preg_match('/\-/',$result);
+	$result = preg_replace('/[^0-9.]/','',$result);
+	if ($result == '') $result = 0.0;
+	$result = 0.0 + $result;
+	if ($minus) $result *= -1.0;
+	return $result;
+	}
+/*
+ * Format a number or string to currency (99,999.00)
+ *	P1 = string or number to format
+ *	returns a currency string sans '$'
+ */
+static function toCurrency($value) {
+	$value = round($value,4);
+	$sign = ($value < 0) ? '-' : '';
+	$string = sprintf('%.2f',round(abs(self::toNumber($value)),2));
+	$parts = explode('.',$string);
+	$result = "";
+	for ($l=strlen($parts[0]); $l > 3; $l=strlen($parts[0])) {
+		$result = ',' . substr($parts[0],-3) . $result;
+		$parts[0] = substr($parts[0],0,-3);
+		}
+	$parts[0] = $parts[0] . $result;
+	if (strlen($parts[0]) == 0) $parts[0] = '0';
+	return $sign.implode('.',$parts);
+	}
+/*
+ * Format a number as cents
+ *	P1 = number to present
+ *	returns a string as 9.99¢
+ */
+static function toCents($value) {
+	$value = 0.0 + $value;
+	if ($value >= 1.00)
+		return '&#36;' . self::toCurrency($value);
+	else
+		return ($value*100.0) . '&cent;';
+	}
+/*
+ * Round a value to the nearest cent
+ *	P1 = number value
+ *	returns a number rounded to nearest cent
+ */
+static function roundCents($value=0.0) {
+	return (round($value * 100.0) / 100.0);
+	}
+/*
+ * Round a value up to the nearest cent
+ *	P1 = number value
+ *	returns a number rounded up to nearest cent
+ */
+static function roundCentsUp($value=0.0) {
+	return (ceil($value * 100.0) / 100.0);
+	}
+/*
+ * Round a value down to the nearest cent
+ *	P1 = number value
+ *	returns a number rounded down to nearest cent
+ */
+static function roundCentsDown($value=0.0) {
+	return (floor($value * 100.0) / 100.0);
 	}
 
 }
@@ -905,4 +1318,205 @@ public function elapsed($seconds=null) {
 	return $result;	
 	}
 	
+}
+
+/**
+ * Console - stdout to console handler
+ */
+class Console {
+
+	const DEFAULT_PREFIX = '>';				// default line prefix
+	const LABEL_SIZE = 20;					// max length of value label
+	const DATE_FORMAT = "D M j G:i:s Y";	// output dates
+
+/**
+ * Constructor:
+ * 
+ *	@param string $prefix		: (optional) prefix to output
+ */
+public function __construct($prefix=null) {
+	$this->prefix = $prefix ? $prefix : self::DEFAULT_PREFIX;
+	$this->prefix .= " "; // append a space
+	$script = $_SERVER['PHP_SELF'];
+	$path = pathinfo($script);
+	$this->script =
+		basename($script,(array_key_exists('extension',$path) ?
+			('.'.$path['extension']) : null));
+	$this->bold = rtrim(`tput bold`);
+	$this->normal = rtrim(`tput sgr0`);
+	}
+
+public function __destruct() {}
+
+/**
+ * write to STDOUT
+ * 
+ *	@param string $msg			: one or more strings to write
+ */
+public function write() {
+	foreach (func_get_args() as $msg)
+		echo $this->prefix,$msg,"\n";
+	}
+
+##
+# read from STDIN
+#
+#	@param string				: (optional) prompt text
+#	@param string				: (optional) default value
+#	@return string				: input string or undef
+#
+public function read($prompt=null,$default=null) {
+	$pretext = $this->prefix;
+	if ($prompt) {
+		$pretext .= $prompt;
+		if ($default) $pretext .= " [$default]";
+		$pretext .= ": ";
+		}
+	$buffer = readline($pretext);
+	if ($default && !$buffer) $buffer = $default;
+	return $buffer;
+	}
+
+/**
+ * confirm a decision or action
+ *
+ *	@param string				: prompt text
+ *	@return boolean				: 0=false, 1=true
+ */
+public function confirm($prompt) {
+	$result = $this->read($prompt." [Y,n]");
+	return (preg_match('/n/i',$result)) ? 0 : 1;
+	}
+	
+/**
+ * display a header line followed by underscores
+ * 
+ * @param string $title			: (optional) a title string
+ */
+public function header($title=null) {
+	if (! $title) {
+		$ltime = date(self::DATE_FORMAT);
+		$title = sprintf("%s start: %s",$this->script,$ltime);
+		}
+	echo "\n";
+	$this->write($title,str_repeat('-',strlen($title)));
+	}
+
+/**
+ * display a footer line preceeded by underscores
+ * 
+ * @param string $title			: (optional) a title string
+ */
+public function footer($title=null) {
+	if (! $title) {
+		$ltime = date(self::DATE_FORMAT);
+		$title = sprintf("%s ended: %s",$this->script,$ltime);
+		}
+	$this->write(str_repeat('-',strlen($title)),$title);
+	echo "\n";
+	}
+
+/**
+ * Exhibit a label (and value)
+ * 
+ * @param string $label			: the label or description of value
+ * @param string $value			: the actual value or null
+ */
+public function exhibit($label,$value=null) {
+	$labelSize = strlen($label);
+	$trailer = ($labelSize >= self::LABEL_SIZE) ? "" :
+		str_repeat(' ',(self::LABEL_SIZE - $labelSize));
+	if (substr($label,-1) == ':') { #subheading
+		$this->write($this->bold.$label.$this->normal);
+		}
+	else { #label & value
+		$value = preg_replace('/[^\x20-\x7E]/','', $value);
+		$value = preg_replace('/\s{2,}/',' ',$value);
+		$value = rtrim($value);
+		if (substr($value,0,1) == ' ')
+			$this->write(" ".$label.$trailer." ".$value);
+		else
+			$this->write(" ".$label.$trailer." ".$this->bold.$value.$this->normal);
+		}	
+	}	
+
+}
+
+/**
+ * Set - methods for dealing with sets of values (lists,sets,etc.)
+ */
+class Set {
+
+/*
+ * Check to see if a value is in a list or set string:
+ * Note: both value & list are case-insensitive
+ *	P1 = value to look for
+ *	P2 = ref. to list/array/set string
+ *	returns true or false
+ */
+static function find($value,&$list) {
+	$value = strtolower($value);
+	$dataset = is_array($list) ? $list : explode(",",$list);
+	foreach ($dataset as $item)
+		if ($value == strtolower($item)) return true;
+	return false;
+	}
+/*
+ * Remove an entry from a list (if present)
+ *	P1 = value to remove
+ *	P2 = set (list or set-string)
+ *	returns (new) list or set-string
+ */
+static function remove($value,$list) {
+	if (!$value) return $list;
+	$isSet = !is_array($list);
+	if ($isSet) $list = explode(',',$list);
+	for ($ix=0; $ix<count($list); ++$ix)
+		if ($value == $list[$ix]) {
+			array_splice($list,$ix,1);
+			break;
+			}
+	return ($isSet ? join(',',$list) : $list);
+	}
+/*
+ * Return the length of the longest element in a list or set
+ * P1 = ref. to the list/set
+ *	returns length of longest element in the list or set
+ */
+static function longest(&$list) {
+	$dataset = is_array($list) ? $list : explode(",",$list);
+	$longest = 0;
+	foreach ($dataset as $element) {
+		$size = strlen($element);
+		if ($size > $longest) $longest = $size;
+		}
+	return $longest;
+	}
+/*
+ * Arrange an array as a line for a CSV (comma-separated values) file
+ *	returns a string formatted as: "...","...",...,"..."(nl)
+ */
+static function toCsvRecord(
+		$list,					// array of values to format
+		$columns=null			// max columns to show (null=all)
+		) {
+	if (gettype($list) != "array") return "\"{$list}\"\n";
+	if ($columns && (sizeof($list)>$columns)) array_splice($list,$columns);
+	return '"' . join('","',$list) . '"' . "\n";
+	}
+
+}
+
+/**
+ * Typography - dealing with type/fonts & special characters
+ */
+class Typography {
+
+// special characters:
+
+	public static $copyright		= '©';
+	public static $registered		= '®';
+	public static $trademark		= '™';
+	public static $bullet				= "·";
+
 }
