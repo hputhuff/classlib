@@ -17,27 +17,19 @@ class Simplicity {
 }
 
 /**
- * Data - class & methods to manipulate data
+ * Data - class methods to manipulate data
  */
 class Data {
 
-/**
- * sift terms to produce a single term
- * 
- * @param array $arguments			: a variable number of terms
- * @return string					: chosen term or null
- */
+// Find first non-null value in the arguments
+
 public static function sift() {
 	foreach (func_get_args() as $arg) if ($arg) return $arg;
 	return null;
 	}
 	
-/**
- * combine terms to produce a single result
- * 
- * @param array $arguments			: a variable number of terms
- * @return string					: combined terms or null
- */
+// return a space-separated string for the arguments
+
 public static function combine() {
 	$provided = func_get_args(); // get all arguments
 	$valued = array();
@@ -48,25 +40,17 @@ public static function combine() {
 	return join(' ',$valued);
 	}
 
-/**
- * render a displayable name from a db column name or tag or ??
- * 
- * @param string $name			: original tag/name
- * @return string				: rendered for display
- */
+// render a string as displayable (such as db column name)
+
 public static function toDisplayName($name) {
-    $interim = preg_replace('/([a-z0-9])([A-Z])/','$1_$2',$name);
+  $interim = preg_replace('/([a-z0-9])([A-Z])/','$1_$2',$name);
 	$parts = preg_split('/[^0-9a-zA-Z]+/',$interim);
 	foreach ($parts as &$part) $part = ucfirst($part);
 	return join(' ',$parts);
 	}
 
-/**
- * render a phone number to a displayable string
- * 
- * @param string $phone			: phone number w/wo formatting
- * @return string				: standardized phone# display
- */
+// render a phone number as a displayable string
+
 public static function toDisplayPhone($phone=null) {
 	if (! $phone) return null;
 	$number = preg_replace('/[^0-9]/','',$phone);
@@ -386,11 +370,19 @@ public function query($sql=null) {
 	}
 
 // fetch record(s) from the database and return them as a list of object(s)
+//	if a class name is provided, each of the objects is of that class
 
-public function fetch($sql) {
+public function fetch($sql,$class=null) {
 	$objects = array();
 	if (! ($result = $this->db->query($sql))) return $this->logErrors($sql);
-	while ($obj = $result->fetch_object()) $objects[] = $obj;
+	while ($obj = $result->fetch_object()) {
+		if ($class) {
+			$objects[] = new $class();
+			$objects[count($objects)-1]->merge($obj);
+			}
+		else
+			$objects[] = $obj;
+			}
 	$result->close();
 	return $objects;
 	}
