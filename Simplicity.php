@@ -62,32 +62,20 @@ public static function toDisplayPhone($phone=null) {
 		return "+{$number}";
 	}
 
-/**
- * convert a string to hex notation
- * 
- * @param string $string		: ascii string
- * @return string				: string of hex digits
- */
+// convert an ascii string to hex notation
+
 public static function toHex($string) {
-    $hex='';
-    for ($i=0; $i < strlen($string); $i++) {
-        $hex .= dechex(ord($string[$i]));
-        }
-    return strtoupper($hex);
+  for ($hex="",$i=0; $i < strlen($string); $i++)
+		$hex .= dechex(ord($string[$i]));
+	return strtoupper($hex);
 	}
 
-/**
- * convert a string of hex digits to ascii
- * 
- * @param string $hex			: string of hex digits
- * @return string				: ascii string
- */
+// convert a string of hex digits to ascii
+
 public static function toAscii($hex) {
-    $string='';
-    for ($i=0; $i < strlen($hex)-1; $i+=2) {
-        $string .= chr(hexdec($hex[$i].$hex[$i+1]));
-       }
-    return $string;
+	for ($string="",$i=0; $i < strlen($hex)-1; $i+=2)
+		$string .= chr(hexdec($hex[$i].$hex[$i+1]));
+	return $string;
 	}
 
 /**
