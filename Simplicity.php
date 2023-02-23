@@ -310,15 +310,10 @@ public function &structure($table=null) {
 		array_push($focus['formats'],$column->Type);
 		array_push($focus['defaults'],$column->Default);
 		if (preg_match('/pri/i',$column->Key)) {
-			if ($focus['primarykey']) {
-				$focus['primarykey'] .= ",{$column->Field}";
-				}
-			else {
-				$focus['primarykey'] = $column->Field;
-				$focus['primarykeycolumn'] = sizeof($focus['properties']);
-				if (preg_match('/auto/i',$column->Extra))
-					$focus['autoincrement'] = $focus['primarykeycolumn'];
-				}
+			$focus['primarykey'] = $column->Field;
+			$focus['primarykeycolumn'] = sizeof($focus['properties']);
+			if (preg_match('/auto/i',$column->Extra))
+				$focus['autoincrement'] = $focus['primarykeycolumn'];
 			}
 		}
 	$results->close();
@@ -338,13 +333,21 @@ public function escape($string) {
 	return $this->db->escape_string($string);
 	}
 
+// insure that a query produces a single row
+	
+public function limitOne($query) {
+	if (! preg_match('/limit\s+\d+/i',$query)) $query .= " LIMIT 1";
+	return $query;
+	}
+
+
 // return the last inserted id for autoincrement tables
 
 public function lastInsertId() {
 	return $this->db->insert_id;
 	}
 
-// perform a query against the database & return affected rows
+// perform a simple query against the database & return affected rows
 
 public function query($sql=null) {
 	if (! $sql) return 0;
@@ -357,43 +360,21 @@ public function query($sql=null) {
 	return $rows;
 	}
 
-// fetch record(s) from the database and return them as a list of object(s)
-//	if a class name is provided, each of the objects is of that class
+// fetch a record from a table by key and return an object or null
 
-public function fetch($sql,$class=null) {
-	$objects = array();
-	if (! ($result = $this->db->query($sql))) return $this->logErrors($sql);
-	while ($obj = $result->fetch_object()) {
-		if ($class) {
-			$objects[] = new $class();
-			$objects[count($objects)-1]->merge($obj);
-			}
-		else
-			$objects[] = $obj;
-			}
+public function fetch($table=null,$key=null) {
+	if (!$table || !$key || !($layout=&$this->structure($table))) return null;
+	$sql =
+		"SELECT * FROM `{$table}` WHERE {$layout['primarykey']}='{$key}' LIMIT 1";
+	if (!($result = $this->db->query($sql))) return $this->logErrors($sql);
+	$obj = $result->fetch_object();
 	$result->close();
-	return $objects;
+	return $obj;
 	}
 
-// fetch a hash of choices (key=>value)
-
-public function fetchChoices($sql) {
-	$choices = array();
-	if (!$result = $this->db->query($sql)) return null;
-	while (list($key,$value) = $result->fetch_row()) $choices[$key] = $value;
-	$result->close();
-	return $choices;
-	}
-
-// store record(s) on the database and return # stored
+// store a new or changed record into the database
 
 public function store($sql) {
-	return $this->query($sql);
-	}
-
-// update record(s) on the database and return # updated
-
-public function update($sql) {
 	return $this->query($sql);
 	}
 
@@ -401,6 +382,54 @@ public function update($sql) {
 
 public function delete($sql) {
 	return $this->query($sql);
+	}
+
+// fetch row(s) from database as a list of arrays
+
+public function fetchRows($sql) {
+	$rows = array();
+	if (!($result = $this->db->query($sql))) return $rows;
+	while ($row = $result->fetch_row()) $rows[] = $row;
+	$result->close();
+	return $rows;
+	}
+
+// fetch object(s) from database as a list of objects
+
+public function fetchObjects($sql,$class=null) {
+	$objects = array();
+	if (!($result = $this->db->query($sql))) return $objects;
+	while ($obj = $result->fetch_object())
+		if ($class) {
+			$objects[] = new $class;
+			$objects[count($objects)-1]->merge($obj);
+			}
+		else
+			$objects[] = $obj;
+	$result->close();
+	return $objects;
+	}
+
+// fetch a hash of choices (key=>value) or null
+
+public function fetchChoices($sql) {
+	$choices = array();
+	$list = $this->fetchRows($sql);
+	if (!count($list)) return null;
+	foreach ($list as $row)	$choices[$row[0]] = $row[1];
+	return $choices;
+	}
+
+// fetch a single value/field from the database
+
+public function fetchValue($sql) {
+	if ($result = $this->db->query($this->limitOne($sql))) {
+		list($value) = $result->fetch_row();
+		$result->close();
+		return $value;
+		}
+	$this->logErrors($sql);
+	return null;
 	}
 
 }
@@ -453,19 +482,16 @@ public function merge($obj) {
 	if (! is_object($obj)) return false;
 	foreach ($this->properties as $property)
 		$this->$property = $obj->$property;
-	return true;
+	return $this->{$this->structure['primarykey']};
 	}
 
 // fetch a database record by key and merge it into this object
 
 public function fetch($key=null) {
 	$this->purge();
-	if (!$key) return false;
-	$query = "SELECT * FROM {$this->table} " .
-					 "WHERE `{$this->properties[0]}` = '$key' " .
-					 "LIMIT 1";
-	if ($results = $this->db->fetch($query)) return $this->merge($results[0]);
-	return false;
+	$obj = $this->db->fetch($this->table,$key);
+	if (!is_object($obj)) return null;
+	return $this->merge($obj);
 	}
 
 // store this object into the database as a record
