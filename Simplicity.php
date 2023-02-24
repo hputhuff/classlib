@@ -565,7 +565,7 @@ public static function validate($email=null) {
  * @param string $unit			: (optional) a unit name for logging (Medusa)
  * @return boolean				: false = no spam present
  */
-public static function filterSPAM($unit="Medusa") {
+public static function filterSPAM($unit="Simplicity") {
 	$expr = "/(href=|link=|url=|porno|optimization)/i";
 	foreach ($_REQUEST as $key => $value) {
 		if (! $value) continue;
