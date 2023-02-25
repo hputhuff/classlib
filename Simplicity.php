@@ -285,10 +285,10 @@ public function logErrors($query) {
 	}
 
 // obtain the structure for a table on the database
-//	returns ref to table array entry or false
+//	returns ref to table array entry or null
 
 public function &structure($table=null) {
-	if (!$table || !array_key_exists($table,$this->tables)) return false;
+	if (!$table || !array_key_exists($table,$this->tables)) return null;
 	$focus =& $this->tables[$table];
 	if (is_array($focus)) return $focus;
 	$focus = array();
