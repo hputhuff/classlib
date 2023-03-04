@@ -562,7 +562,7 @@ public static function validate($email=null) {
 /**
  * ::check any request data for spam and trash it
  * 
- * @param string $unit			: (optional) a unit name for logging (Medusa)
+ * @param string $unit			: (optional) a unit name for logging (Simplicity)
  * @return boolean				: false = no spam present
  */
 public static function filterSPAM($unit="Simplicity") {
