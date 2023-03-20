@@ -488,6 +488,7 @@ public function merge($obj) {
 // fetch a database record by key and merge it into this object
 
 public function fetch($key=null) {
+	if (! $key) $key = $this->{$this->structure['primarykey']};
 	$this->purge();
 	$obj = $this->db->fetch($this->table,$key);
 	if (!is_object($obj)) return null;
@@ -498,6 +499,7 @@ public function fetch($key=null) {
 
 public function store() {
 	$keyname = $this->structure['primarykey'];
+	$hasTimestamp = false;
 	$sql = "REPLACE INTO `{$this->table}` VALUES(";
 	$values = [];
 	for ($ix=0; $ix<count($this->properties); $ix++) {
@@ -517,6 +519,7 @@ public function store() {
 				preg_match('/current/i',$this->structure['defaults'][$ix])) {
 			$this->$property = null;
 			$values[] = "NULL";
+			$hasTimestamp = true;
 			continue;
 			}
 		$values[] = '"' . $this->db->escape($value) . '"';
@@ -524,6 +527,7 @@ public function store() {
 	$sql .= join(',',$values) . ')';
 	if (! $this->db->store($sql)) return null;
 	if (! $this->$keyname) $this->$keyname = $this->db->lastInsertId();
+	if ($hasTimestamp) $this->fetch();
 	return $this->$keyname;
 	}
 	
