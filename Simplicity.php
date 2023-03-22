@@ -499,7 +499,7 @@ public function fetch($key=null) {
 
 public function store() {
 	$keyname = $this->structure['primarykey'];
-	$hasTimestamp = false;
+	$rightNow = Date::timestamp();
 	$sql = "REPLACE INTO `{$this->table}` VALUES(";
 	$values = [];
 	for ($ix=0; $ix<count($this->properties); $ix++) {
@@ -517,9 +517,8 @@ public function store() {
 			}
 		if (preg_match('/timestamp/i',$format) &&
 				preg_match('/current/i',$this->structure['defaults'][$ix])) {
-			$this->$property = null;
 			$values[] = "NULL";
-			$hasTimestamp = true;
+			$this->$property = $rightNow;
 			continue;
 			}
 		$values[] = '"' . $this->db->escape($value) . '"';
@@ -527,7 +526,6 @@ public function store() {
 	$sql .= join(',',$values) . ')';
 	if (! $this->db->store($sql)) return null;
 	if (! $this->$keyname) $this->$keyname = $this->db->lastInsertId();
-	if ($hasTimestamp) $this->fetch();
 	return $this->$keyname;
 	}
 	
@@ -843,7 +841,7 @@ public static function toQuick($date=null) {
  * @return string			: current date/time as yyyy-mm-dd hh:mm:ss
  */
 public static function timestamp() {
-	return self::toInternal(null,LONGDATE);
+	return self::toInternal();
 	}
 
 /**
