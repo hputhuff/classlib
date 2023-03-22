@@ -517,9 +517,7 @@ public function store() {
 			}
 		if (preg_match('/timestamp/i',$format) &&
 				preg_match('/current/i',$this->structure['defaults'][$ix])) {
-			$this->$property = $rightNow;
-			$values[] = '"' . $rightNow . '"';
-			continue;
+			$this->$property = $value = $rightNow;
 			}
 		$values[] = '"' . $this->db->escape($value) . '"';
 		}
