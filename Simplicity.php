@@ -163,6 +163,12 @@ public static function randomString($length) {
     return $string;
 	}
 
+// Generate and return a unique 12 character userkey / token
+
+public static function generateUserkey() {
+	return bin2hex(openssl_random_pseudo_bytes(6));
+	}
+
 /**
  * return a Skype-proof string that won't be rendered as a link
  * 
